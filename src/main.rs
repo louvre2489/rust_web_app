@@ -10,6 +10,8 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use dotenv::dotenv;
+use sqlx::PgPool;
 
 use crate::repositories::*;
 
@@ -22,7 +24,15 @@ async fn main() {
     env::set_var("RUST_LOG", log_level);
     tracing_subscriber::fmt::init();
 
-    let repositoy = TodoRepositoryForMemory::new();
+    dotenv().ok();
+
+    let database_url = &env::var("DATABASE_URL").expect("undefined [DATABASE_URL]");
+    tracing::debug!("start connect database..");
+    let pool = PgPool::connect(database_url)
+        .await
+        .expect(&format!("fail connect database, url is [{}]", database_url));
+
+    let repositoy = TodoRepositoryForDb::new(pool);
     let app = create_app(repositoy);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
@@ -55,7 +65,7 @@ async fn root() -> &'static str {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::repositories::{CreateTodo, Todo};
+    use crate::repositories::{test_utils::TodoRepositoryForMemory, CreateTodo, Todo};
     use axum::response::Response;
     use axum::{
         body::Body,
