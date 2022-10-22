@@ -1,12 +1,14 @@
 use axum::async_trait;
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{FromRow, PgPool};
 use thiserror::Error;
 
 use validator::Validate;
 
 #[derive(Debug, Error)]
 enum RepositoryError {
+    #[error("Unexpected Error: [{0}]")]
+    Unexpected(String),
     #[error("NotFound, id is {0}")]
     NotFound(i32),
 }
@@ -20,7 +22,7 @@ pub trait TodoRepository: Clone + std::marker::Send + std::marker::Sync + 'stati
     async fn delete(&self, id: i32) -> anyhow::Result<()>;
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, FromRow)]
 pub struct Todo {
     id: i32,
     text: String,
@@ -55,16 +57,48 @@ impl TodoRepositoryForDb {
 
 #[async_trait]
 impl TodoRepository for TodoRepositoryForDb {
-    async fn create(&self, _payload: CreateTodo) -> anyhow::Result<Todo> {
-        todo!()
+    async fn create(&self, payload: CreateTodo) -> anyhow::Result<Todo> {
+        let todo = sqlx::query_as::<_, Todo>(
+            r#"
+                insert into todos (text, completed)
+                values ($1, false)
+                returning *
+            "#,
+        )
+        .bind(payload.text.clone())
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(todo)
     }
 
     async fn find(&self, id: i32) -> anyhow::Result<Todo> {
-        todo!()
+        let todo = sqlx::query_as::<_, Todo>(
+            r#"
+                select id, text, completed from todos where id = $1
+            "#,
+        )
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::RowNotFound => RepositoryError::NotFound(id),
+            _ => RepositoryError::Unexpected(e.to_string()),
+        })?;
+
+        Ok(todo)
     }
 
     async fn all(&self) -> anyhow::Result<Vec<Todo>> {
-        todo!()
+        let todos = sqlx::query_as::<_, Todo>(
+            r#"
+                select id, text, completed from todos order by id desc
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(todos)
     }
 
     async fn update(&self, id: i32, payload: UpdateTodo) -> anyhow::Result<Todo> {
