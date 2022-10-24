@@ -102,11 +102,38 @@ impl TodoRepository for TodoRepositoryForDb {
     }
 
     async fn update(&self, id: i32, payload: UpdateTodo) -> anyhow::Result<Todo> {
-        todo!()
+        let old = self.find(id).await?;
+
+        let todo = sqlx::query_as::<_, Todo>(
+            r#"
+                update todos set text = $1, completed = $2 where id = $3
+                returning *
+            "#,
+        )
+        .bind(payload.text.unwrap_or(old.text))
+        .bind(payload.completed.unwrap_or(old.completed))
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(todo)
     }
 
     async fn delete(&self, id: i32) -> anyhow::Result<()> {
-        todo!()
+        sqlx::query(
+            r#"
+                delete from todos where id = $1
+            "#,
+        )
+        .bind(id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::RowNotFound => RepositoryError::NotFound(id),
+            _ => RepositoryError::Unexpected(e.to_string()),
+        })?;
+
+        Ok(())
     }
 }
 
