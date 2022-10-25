@@ -13,9 +13,9 @@ use axum::{
 use dotenv::dotenv;
 use sqlx::PgPool;
 
-use crate::repositories::*;
+use crate::repositories::todo::*;
 
-use handlers::*;
+use crate::handlers::todo::*;
 
 #[tokio::main]
 async fn main() {
@@ -65,7 +65,7 @@ async fn root() -> &'static str {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::repositories::{test_utils::TodoRepositoryForMemory, CreateTodo, Todo};
+    use crate::repositories::todo::{test_utils::TodoRepositoryForMemory, CreateTodo, Todo};
     use axum::response::Response;
     use axum::{
         body::Body,
