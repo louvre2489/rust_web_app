@@ -7,15 +7,14 @@ use std::sync::Arc;
 
 use axum::{
     extract::Extension,
-    routing::{get, post},
+    routing::{delete, get, post},
     Router,
 };
 use dotenv::dotenv;
 use sqlx::PgPool;
 
-use crate::repositories::todo::*;
-
-use crate::handlers::todo::*;
+use crate::handlers::{label::*, todo::*};
+use crate::repositories::{label::*, todo::*};
 
 #[tokio::main]
 async fn main() {
@@ -32,8 +31,10 @@ async fn main() {
         .await
         .expect(&format!("fail connect database, url is [{}]", database_url));
 
-    let repositoy = TodoRepositoryForDb::new(pool);
-    let app = create_app(repositoy);
+    let app = create_app(
+        TodoRepositoryForDb::new(pool.clone()),
+        LabelRepositoryForDb::new(pool.clone()),
+    );
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
@@ -45,17 +46,26 @@ async fn main() {
         .unwrap();
 }
 
-fn create_app<T: TodoRepository>(repositoy: T) -> Router {
+fn create_app<Todo: TodoRepository, Label: LabelRepository>(
+    todo_repository: Todo,
+    label_repository: Label,
+) -> Router {
     Router::new()
         .route("/", get(root))
-        .route("/todos", post(create_todo::<T>).get(all_todo::<T>))
+        .route("/todos", post(create_todo::<Todo>).get(all_todo::<Todo>))
         .route(
             "/todos/:id",
-            get(find_todo::<T>)
-                .delete(delete_todo::<T>)
-                .patch(update_todo::<T>),
+            get(find_todo::<Todo>)
+                .delete(delete_todo::<Todo>)
+                .patch(update_todo::<Todo>),
         )
-        .layer(Extension(Arc::new(repositoy)))
+        .route(
+            "labels",
+            post(create_label::<Label>).get(all_label::<Label>),
+        )
+        .route("labels/:id", delete(delete_label::<Label>))
+        .layer(Extension(Arc::new(todo_repository)))
+        .layer(Extension(Arc::new(label_repository)))
 }
 
 async fn root() -> &'static str {
