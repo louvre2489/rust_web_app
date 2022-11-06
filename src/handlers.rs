@@ -1,6 +1,9 @@
-use axum::extract::{FromRequest, RequestParts};
-use axum::http::StatusCode;
-use axum::{async_trait, BoxError, Json};
+use axum::{
+    async_trait,
+    extract::{FromRequest, RequestParts},
+    http::StatusCode,
+    BoxError, Json,
+};
 use serde::de::DeserializeOwned;
 use validator::Validate;
 
@@ -26,7 +29,7 @@ where
             (StatusCode::BAD_REQUEST, message)
         })?;
         value.validate().map_err(|rejection| {
-            let message = format!("Validateion error: [{}]", rejection).replace('\n', ", ");
+            let message = format!("Validation error: [{}]", rejection).replace('\n', ", ");
             (StatusCode::BAD_REQUEST, message)
         })?;
         Ok(ValidatedJson(value))

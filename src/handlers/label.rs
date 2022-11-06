@@ -1,10 +1,11 @@
-use std::sync::Arc;
-
-use axum::extract::{Extension, Path};
-use axum::http::StatusCode;
-use axum::response::IntoResponse;
-use axum::Json;
+use axum::{
+    extract::{Extension, Path},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use validator::Validate;
 
 use crate::repositories::label::LabelRepository;
@@ -41,7 +42,7 @@ pub async fn delete_label<T: LabelRepository>(
         .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Validate)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Validate)]
 pub struct CreateLabel {
     #[validate(length(min = 1, message = "Can not be empty"))]
     #[validate(length(max = 100, message = "Over text length"))]

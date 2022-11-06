@@ -1,8 +1,7 @@
+use super::RepositoryError;
 use axum::async_trait;
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgPool};
-
-use super::RepositoryError;
+use sqlx::PgPool;
 
 #[async_trait]
 pub trait LabelRepository: Clone + std::marker::Send + std::marker::Sync + 'static {
@@ -11,10 +10,10 @@ pub trait LabelRepository: Clone + std::marker::Send + std::marker::Sync + 'stat
     async fn delete(&self, id: i32) -> anyhow::Result<()>;
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, FromRow)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, sqlx::FromRow)]
 pub struct Label {
-    id: i32,
-    name: String,
+    pub id: i32,
+    pub name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -39,8 +38,8 @@ impl LabelRepository for LabelRepositoryForDb {
     async fn create(&self, name: String) -> anyhow::Result<Label> {
         let optional_label = sqlx::query_as::<_, Label>(
             r#"
-                select * from labels where name = $1
-            "#,
+select * from labels where name = $1
+        "#,
         )
         .bind(name.clone())
         .fetch_optional(&self.pool)
@@ -52,8 +51,10 @@ impl LabelRepository for LabelRepositoryForDb {
 
         let label = sqlx::query_as::<_, Label>(
             r#"
-                insert into labels ( name ) values ( $1 ) returning *
-            "#,
+insert into labels ( name )
+values ( $1 )
+returning *
+        "#,
         )
         .bind(name.clone())
         .fetch_one(&self.pool)
@@ -65,8 +66,9 @@ impl LabelRepository for LabelRepositoryForDb {
     async fn all(&self) -> anyhow::Result<Vec<Label>> {
         let labels = sqlx::query_as::<_, Label>(
             r#"
-                select * from labels order by labels.id asc
-            "#,
+select * from labels
+order by labels.id asc;
+        "#,
         )
         .fetch_all(&self.pool)
         .await?;
@@ -77,8 +79,8 @@ impl LabelRepository for LabelRepositoryForDb {
     async fn delete(&self, id: i32) -> anyhow::Result<()> {
         sqlx::query(
             r#"
-                delete from labels where id = $1
-            "#,
+delete from labels where id=$1
+        "#,
         )
         .bind(id)
         .execute(&self.pool)
@@ -108,22 +110,15 @@ mod test {
             .await
             .expect(&format!("fail connect database, url is [{}]", database_url));
 
-        let repository = LabelRepositoryForDb::new(pool.clone());
+        let repository = LabelRepositoryForDb::new(pool);
         let label_text = "test_label";
 
         // create
-        let created = repository
+        let label = repository
             .create(label_text.to_string())
             .await
             .expect("[create] returned Err");
-
-        assert_eq!(created.name, label_text);
-
-        // all
-        let labels = repository.all().await.expect("[all] returned Err");
-        let label = labels.first().unwrap();
-
-        assert_eq!(created, *label);
+        assert_eq!(label.name, label_text);
 
         // delete
         repository
