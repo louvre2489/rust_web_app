@@ -111,4 +111,4 @@ jobs:
         run: sqlx migrate run
 
       - name: Run App
-        run: cargo watch -x run
+        run: cargo run
