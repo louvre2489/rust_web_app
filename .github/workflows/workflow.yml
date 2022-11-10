@@ -104,7 +104,7 @@ jobs:
           crate: sqlx-cli
 
       - name: Start DB
-        run: docker compose -f ./docker-compose.yml up -d
+        run: docker compose -f ./docker-compose-database.yml up -d
 
       - name: Create DB
         run: sqlx db create
