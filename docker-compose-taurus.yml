@@ -1,7 +1,10 @@
 version: "3.8"
 services:
   taurus:
-    image: "blazemeter/taurus"
-    command: /rust_web_app/taurus/execution.yml
+    build:
+      context: .
+      dockerfile: Dockerfile_taurus
+      target: 'taurus'
+    command: ./taurus/execution.yml
     volumes:
-      - .:/rust_web_app
+      - .:/bzt-configs
