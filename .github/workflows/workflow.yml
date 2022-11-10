@@ -103,8 +103,8 @@ jobs:
         with:
           crate: sqlx-cli
 
-      - name: Build
-        run: docker compose up -d
+      - name: Start DB
+        run: docker compose -f ./docker-compose.yml up -d
 
       - name: Create DB
         run: sqlx db create
@@ -114,3 +114,6 @@ jobs:
 
       - name: Run App
         run: cargo run &
+
+      - name: Run Stress Test
+        run: docker compose -f ./docker-compose-taurus.yml up -d

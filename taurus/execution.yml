@@ -1,0 +1,15 @@
+execution:
+- concurrency: 10
+  hold-for: 10s
+  ramp-up: 5s
+  scenario: example
+  
+scenarios:
+  example:
+    retrieve-resources: false
+    requests:
+      - http://localhost:3000/todos/
+
+reporting:
+- module: final-stats
+- module: console

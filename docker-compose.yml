@@ -15,10 +15,5 @@ services:
       POSTGRES_DB: todos
       TZ: Asia/Tokyo
     restart: always
-  taurus:
-    image: "blazemeter/taurus"
-    command: /rust_web_app/taurus/execution.yml
-    volumes:
-      - .:/rust_web_app
 volumes:
   pgdata:
