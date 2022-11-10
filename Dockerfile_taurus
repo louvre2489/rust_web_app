@@ -1,0 +1,1 @@
+FROM blazemeter/taurus:1.16.17 AS taurus
