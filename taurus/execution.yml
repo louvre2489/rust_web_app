@@ -8,7 +8,7 @@ scenarios:
   example:
     retrieve-resources: false
     requests:
-      - http://localhost:3000/todos
+      - http://host.docker.internal:3000/todos/2
 
 reporting:
 - module: final-stats

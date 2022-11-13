@@ -116,4 +116,4 @@ jobs:
         run: cargo run
 
       - name: Run Taurus
-        run: docker run --rm -v $PWD:/bzt-configs blazemeter/taurus ./taurus/execution.yml
+        run: docker run --rm --add-host=host.docker.internal:host-gateway -v $PWD:/bzt-configs blazemeter/taurus ./taurus/execution.yml
