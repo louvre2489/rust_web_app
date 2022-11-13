@@ -113,7 +113,7 @@ jobs:
         run: sqlx migrate run
 
       - name: Run App
-        run: cargo run &
+        run: cargo run
 
       - name: Run Taurus
         run: docker run --rm -v $PWD:/bzt-configs blazemeter/taurus ./taurus/execution.yml
