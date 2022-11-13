@@ -115,5 +115,5 @@ jobs:
       - name: Run App
         run: cargo run &
 
-      - name: Run Stress Test
-        run: docker compose -f ./docker-compose-taurus.yml up -d
+      - name: Run Taurus
+        run: docker run -it --rm -v $PWD:/bzt-configs blazemeter/taurus ./taurus/execution.yml
